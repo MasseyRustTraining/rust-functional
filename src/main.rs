@@ -1,10 +1,12 @@
-fn accumulate<I>(
+fn produce<F, G>(
     range: std::ops::RangeInclusive<u64>,
-    range_filter: impl Fn(&u64) -> bool,
-    accumulator: impl Fn(I) -> u64,
-) -> u64
+    range_filter: F,
+    (fold_start, folder): (u64, G),
+) -> u64 where
+    F: FnMut(&u64) -> bool,
+    G: FnMut(u64, u64) -> u64,
 {
-    accumulator(range.filter(range_filter))
+    range.filter(range_filter).fold(fold_start, folder)
 }
 
 fn main() {
@@ -23,10 +25,12 @@ fn main() {
     let sum: u64 = numbers.iter().sum();
     println!("{}", sum);
 
-    fn summer(iter: impl Iterator<Item = u64>) -> u64 {
-        iter.sum()
-    }
-    let filter = |&n| n % 2 == 0;
-    let sum = accumulate(1..=100, filter, summer);
+    let filter = |&n: &u64| {
+        n % 2 == 0
+    };
+    let summer = |a: u64, n: u64| {
+        a + n
+    };
+    let sum = produce(1..=100, filter, (0, summer));
     println!("{}", sum);
 }
